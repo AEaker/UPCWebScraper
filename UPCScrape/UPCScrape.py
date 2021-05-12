@@ -5,6 +5,7 @@ import time
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from random import randint
+import numpy as np
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import WebDriverException
@@ -12,7 +13,7 @@ from selenium.common.exceptions import WebDriverException
 chrome_options = webdriver.ChromeOptions()
 chrome_options.add_argument('--ignore-certificate-errors')
 chrome_options.add_argument('--ignore-ssl-errors')
-chrome_options.add_argument("--headless")
+#chrome_options.add_argument("--headless")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-gpu")
 chrome_options.add_argument("--incognito")
@@ -42,8 +43,8 @@ for i in range(0, len(df)):
     UPCs = []
     links = []
     UsefulLinks = []
-    ID_And_UPC_Dict[ItemID[i]] = None
-    ID_And_Link_Dict[ItemID[i]] = None
+    # ID_And_UPC_Dict[ItemID[i]] = np.nan
+    # ID_And_Link_Dict[ItemID[i]] = np.nan
     print('Researching #' + str(i) +' out of ' + str(len(df)))
     url = "http://www.google.com/search?q=" + search_string
     try:
@@ -70,12 +71,12 @@ for i in range(0, len(df)):
 
                     for link in links:
                         try:
+                            print('Searching for data on ' + link)
                             driver.get(link)
                             #response = requests.get(link, headers=headers, timeout=12)
                             time.sleep(5)
                             soup = BeautifulSoup(driver.page_source, 'html.parser')
                             text =  soup.get_text()
-                            print('Searching for data on ' + link)
                             #If UPC is on the page, grab it, if not, move on.
                             if text.find('UPC') != -1:
                                 print('UPC found..adding to list..')
@@ -83,7 +84,7 @@ for i in range(0, len(df)):
                                 string_end = string + 30
                                 Code = text[string:string_end]
                                 CleanCode = ''.join([num for num in Code if num.isdigit()])
-                                UPCs.append(CleanCode) 
+                                UPCs.append(str(CleanCode)) 
                                 UsefulLinks.append(link)
                             else:
                                 print("No UPC found, moving to next link.")
@@ -118,7 +119,7 @@ for i in range(0, len(df)):
                             string_end = string + 30
                             Code = text[string:string_end]
                             CleanCode = ''.join([num for num in Code if num.isdigit()])
-                            UPCs.append(CleanCode) 
+                            UPCs.append(str(CleanCode)) 
                             UsefulLinks.append(link)
                         else:
                             print("No UPC found, moving to next link.")
@@ -183,18 +184,8 @@ except Exception as e:
 
 
 try:
-    ID_UPC = pd.DataFrame(data=ID_And_UPC_Dict)
-    ID_UPC.to_excel('UPC.xlsx')
-except Exception as e:
-    print("Couldn't write excel file....")
-    print(e)
-    pass
-
-
-try:
     ID_UPC = pd.DataFrame.from_dict(ID_And_UPC_Dict, orient='index')
-    ID_UPC.T
-    ID_UPC.to_excel('TransposedUPC.xlsx')
+    ID_UPC.to_excel('UPC.xlsx')
 except Exception as e:
     print("Couldn't write Transposed UPC excel file....")
     print(e)
@@ -202,35 +193,13 @@ except Exception as e:
 
 try:
     ID_Link = pd.DataFrame.from_dict(ID_And_Link_Dict, orient='index')
-    ID_Link.T
-    ID_Link.to_excel('TransposedLink.xlsx')
+    ID_Link.to_excel('Link.xlsx')
 except Exception as e:
     print("Couldn't write Transposed Link excel file....")
     print(e)
     pass
 
 
-try:
-    with open('IDUPCDict1.csv', 'w') as csvfile:
-        writer = csv.writer(csvfile)
-        for key, values in ID_And_UPC_Dict.items():
-            for value in values:
-                writer.writerow([key, value])
-except Exception as e:
-    print("Couldn't write csv file....")
-    print(e)
-    pass
-
-try:
-    with open('IDLinkDict1.csv', 'w') as csvfile:
-        writer = csv.writer(csvfile)
-        for key, values in ID_And_Link_Dict.items():
-            for value in values:
-                writer.writerow([key, value])
-except Exception as e:
-    print("Couldn't write csv file....")
-    print(e)
-    pass
 
 print('-------------------------------')
 # print(links)
